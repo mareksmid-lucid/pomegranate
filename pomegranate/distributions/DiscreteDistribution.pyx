@@ -18,6 +18,7 @@ from ..utils cimport _log
 from ..utils cimport isnan
 from ..utils import check_random_state
 from ..utils import _check_nan
+from ..utils import logsumexp
 
 from libc.math cimport sqrt as csqrt
 
@@ -171,8 +172,10 @@ cdef class DiscreteDistribution(Distribution):
 
 	def log_probability(self, X):
 		"""Return the log prob of the X under this distribution."""
-
-		return self.__log_probability(X)
+		if isinstance(X, (set, frozenset)):
+			return logsumexp([self.__log_probability(x) for x in X])
+		else:
+			return self.__log_probability(X)
 
 	cdef double __log_probability(self, X):
 		if _check_nan(X):

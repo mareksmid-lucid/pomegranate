@@ -164,8 +164,10 @@ cdef class ConditionalProbabilityTable(MultivariateDistribution):
 
 	@staticmethod
 	def _matches(key, X):
+		if key == X:
+			return True
 		for k, x in zip(key, X):
-			if not _check_nan(x) and k != x:
+			if not _check_nan(x) and k != x and not (isinstance(x, (set, frozenset)) and k in x):
 				return False
 		return True
 
@@ -188,16 +190,16 @@ cdef class ConditionalProbabilityTable(MultivariateDistribution):
 		my_log_prob = logsumexp([
 			joint.log_probability_by_idx(idx)
 			for key, idx in joint.keymap.items()
-			if key == X or ConditionalProbabilityTable._matches(key, X)
+			if ConditionalProbabilityTable._matches(key, X)
 		])
 
 		if all(_check_nan(x) for x in X[:-1]):
 			parents_log_prob = 0.0
 		else:
-			parents_log_prob = logsumexp([
+			input_log_prob = logsumexp([
 				joint.log_probability_by_idx(idx)
 				for key, idx in joint.keymap.items()
-				if key[:-1] == X[:-1] or ConditionalProbabilityTable._matches(key[:-1], X[:-1])
+				if ConditionalProbabilityTable._matches(key[:-1], X[:-1])
 			])
 
 		return my_log_prob - parents_log_prob
